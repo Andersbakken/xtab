@@ -110,6 +110,8 @@ public:
         handleAction(NewTab);
         setFocusPolicy(Qt::NoFocus);
         setElideMode(Qt::ElideRight);
+        setStyleSheet("QTabWidget::pane { margin-top: 1px solid #000000 }");
+        setDocumentMode(true);
     }
     bool event(QEvent *e)
     {
