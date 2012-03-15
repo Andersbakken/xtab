@@ -11,7 +11,7 @@ class Container : public QX11EmbedContainer
     Q_OBJECT;
 public:
     Container(QProcess *proc, QWidget *parent = 0)
-        : QX11EmbedContainer(parent), mProcess(proc)
+        : QX11EmbedContainer(parent), mProcess(proc), mExplicitName(false)
     {
         connect(this, SIGNAL(clientClosed()), this, SLOT(deleteLater()));
         connect(this, SIGNAL(clientIsEmbedded()), this, SLOT(onClientEmbedded()));
@@ -29,6 +29,11 @@ public:
     void focusInEvent(QFocusEvent *e)
     {
         QX11EmbedContainer::focusInEvent(e);
+        onFocusIn();
+    }
+
+    void onFocusIn()
+    {
         setXFocus();
         timer.start(10, this);
     }
@@ -40,15 +45,26 @@ public:
     bool updateTitleBar(Window window)
     {
         if (window == clientWinId()) {
-            char* name;
-            int status = XFetchName(x11Info().display(), window, &name);
-            if (status && name) {
-                emit titleBarChanged(this, QString::fromLocal8Bit(name));
-                XFree(name);
+            if (!mExplicitName) {
+                char* name;
+                int status = XFetchName(x11Info().display(), window, &name);
+                if (status && name) {
+                    emit titleBarChanged(this, QString::fromLocal8Bit(name));
+                    XFree(name);
+                }
             }
             return true;
         }
         return false;
+    }
+    void setExplicitName(const QString &name)
+    {
+        mExplicitName = !name.isEmpty();
+        if (mExplicitName) {
+            emit titleBarChanged(this, name);
+        } else {
+            updateTitleBar(clientWinId());
+        }
     }
 signals:
     void titleBarChanged(Container *container, const QString &name);
@@ -66,6 +82,8 @@ public slots:
         XSelectInput(x11Info().display(), id, attrib.your_event_mask | PropertyChangeMask);
         XUngrabServer(x11Info().display());
         updateTitleBar(id);
+        if (isVisible())
+            onFocusIn();
     }
     void setXFocus()
     {
@@ -82,6 +100,7 @@ public slots:
 private:
     QBasicTimer timer;
     QProcess *mProcess;
+    bool mExplicitName;
 };
 
 class TabWidget : public QTabWidget
@@ -106,12 +125,19 @@ public:
     };
     TabWidget()
     {
+        tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(tabBar(), SIGNAL(customContextMenuRequested(QPoint)),
+                this, SLOT(onCustomContextMenuRequested(QPoint)));
+
+        connect(this, SIGNAL(tabCloseRequested(int)), this, SLOT(onCloseRequested(int)));
         connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
         handleAction(NewTab);
         setFocusPolicy(Qt::NoFocus);
         setElideMode(Qt::ElideRight);
         setStyleSheet("QTabWidget::pane { margin-top: 1px solid #000000 }");
         setDocumentMode(true);
+        setTabsClosable(true);
+        setMovable(true);
     }
     bool event(QEvent *e)
     {
@@ -217,20 +243,53 @@ public:
     virtual void tabRemoved(int index)
     {
         QTabWidget::tabRemoved(index);
-        if (!count())
+        if (!count()) {
             close();
+        } else {
+            currentWidget()->setFocus();
+        }
     }
 
     void onPropertyNotify(Window window)
     {
         const int c = count();
         for (int i=0; i<c; ++i) {
-            if (qobject_cast<Container*>(widget(i))->updateTitleBar(window))
+            if (container(i)->updateTitleBar(window))
                 break;
         }
     }
 
+    Container *container(int idx) const
+    {
+        return qobject_cast<Container*>(widget(idx));
+    }
+
 public slots:
+    void onCustomContextMenuRequested(const QPoint &pos)
+    {
+        const int tab = tabBar()->tabAt(pos);
+        if (tab != -1) {
+            QMenu menu;
+            QAction *rename = menu.addAction("&Rename");
+            QAction *close = menu.addAction("&Close");
+            QAction *action = menu.exec(tabBar()->mapToGlobal(pos));
+            if (action == rename) {
+                bool ok;
+                const QString name = QInputDialog::getText(this, "Rename tab", "Rename tab",
+                                                           QLineEdit::Normal, tabBar()->tabText(tab), &ok);
+                if (ok) {
+                    container(tab)->setExplicitName(name);
+                }
+            } else if (action == close) {
+                widget(tab)->deleteLater();
+            }
+        }
+    }
+    void onCloseRequested(int idx)
+    {
+        delete widget(idx);
+    }
+
     void onTitleBarChanged(Container *c, const QString &name)
     {
         setTabText(indexOf(c), name);
