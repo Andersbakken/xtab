@@ -9,10 +9,20 @@ class Container : public QX11EmbedContainer
 {
     Q_OBJECT;
 public:
-    Container(QWidget *parent = 0)
-        : QX11EmbedContainer(parent)
+    Container(QProcess *proc, QWidget *parent = 0)
+        : QX11EmbedContainer(parent), mProcess(proc)
     {
         connect(this, SIGNAL(clientClosed()), this, SLOT(deleteLater()));
+    }
+    ~Container()
+    {
+        if (mProcess->state() != QProcess::NotRunning) {
+            mProcess->kill();
+            if (!mProcess->waitForFinished(2000)) {
+                mProcess->terminate();
+            }
+        }
+        delete mProcess;
     }
     void focusInEvent(QFocusEvent *e)
     {
@@ -40,6 +50,7 @@ public slots:
     }
 private:
     QBasicTimer timer;
+    QProcess *mProcess;
 };
 
 class MainWindow : public QTabWidget
@@ -184,10 +195,11 @@ public slots:
 
     void newTab()
     {
-        Container *t = new Container(this);
+        QProcess *p = new QProcess;
+        Container *t = new Container(p, this);
         addTab(t, QString::number(count()));
         setCurrentWidget(t);
-        QProcess::startDetached("xterm", QStringList() << "-into" << QString::number(t->internalWinId()));
+        p->start("xterm", QStringList() << "-into" << QString::number(t->internalWinId()));
     }
 private:
     GlobalShortcut mShortcuts;
