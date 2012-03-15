@@ -4,6 +4,67 @@
 #include "GlobalShortcut.h"
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+
+template<typename T>
+static inline bool readProperty(Display* dpy, Window w, Atom property, QList<T>& data)
+{
+    data.clear();
+
+    Atom retatom;
+    int retfmt;
+    unsigned long retnitems, retbytes;
+    unsigned char* retprop;
+
+    unsigned long offset = 0;
+    int r;
+    do {
+        r = XGetWindowProperty(dpy, w, property, offset, 200, False, AnyPropertyType,
+                               &retatom, &retfmt, &retnitems, &retbytes, &retprop);
+        if (r != Success || retatom == None)
+            return false;
+
+        Q_ASSERT(retfmt == (sizeof(T) * 8));
+
+        const T* retdata = reinterpret_cast<T*>(retprop);
+        for (unsigned long i = 0; i < retnitems; ++i)
+            data << retdata[i];
+        XFree(retprop);
+
+        switch(retfmt) {
+        case 8:
+            offset += retnitems * 4;
+            break;
+        case 16:
+            offset += retnitems * 2;
+            break;
+        case 32:
+            offset += retnitems;
+            break;
+        default:
+            qFatal("Invalid format returned in readProperty: %d", retfmt);
+        }
+    } while (retbytes > 0);
+
+    return true;
+}
+
+static inline QByteArray windowName(Display* dpy, Window w)
+{
+    QByteArray res;
+
+    XClassHint hint;
+    if (XGetClassHint(dpy, w, &hint) != 0) {
+        if (hint.res_name) {
+            res = QByteArray(hint.res_name, strnlen(hint.res_name, 100)).toLower();
+            XFree(hint.res_name);
+        }
+        if (hint.res_class)
+            XFree(hint.res_class);
+    }
+
+    return res;
+}
 
 class Container : public QX11EmbedContainer
 {
@@ -13,6 +74,7 @@ public:
         : QX11EmbedContainer(parent), mProcess(proc)
     {
         connect(this, SIGNAL(clientClosed()), this, SLOT(deleteLater()));
+        connect(this, SIGNAL(clientIsEmbedded()), this, SLOT(onClientEmbedded()));
     }
     ~Container()
     {
@@ -35,7 +97,32 @@ public:
         QX11EmbedContainer::focusOutEvent(e);
         timer.stop();
     }
+    bool updateTitleBar(Window window)
+    {
+        if (window == clientWinId()) {
+            const QString name = QString::fromLocal8Bit(windowName(x11Info().display(), window));
+            emit titleBarChanged(this, name);
+            return true;
+        }
+        return false;
+    }
+signals:
+    void titleBarChanged(Container *container, const QString &name);
 public slots:
+    void onClientEmbedded()
+    {
+        XGrabServer(x11Info().display());
+        XWindowAttributes attrib;
+        Window id = clientWinId();
+        if (!XGetWindowAttributes(x11Info().display(), id, &attrib)) {
+            XUngrabServer(x11Info().display());
+            qWarning("Couldn't get attributes");
+            return;
+        }
+        XSelectInput(x11Info().display(), id, attrib.your_event_mask | PropertyChangeMask);
+        XUngrabServer(x11Info().display());
+        updateTitleBar(id);
+    }
     void setXFocus()
     {
         XSetInputFocus(x11Info().display(), clientWinId(), RevertToParent, CurrentTime);
@@ -187,7 +274,21 @@ public:
             close();
     }
 
+    void onPropertyNotify(Window window)
+    {
+        const int c = count();
+        for (int i=0; i<c; ++i) {
+            if (qobject_cast<Container*>(widget(i))->updateTitleBar(window))
+                break;
+        }
+    }
+
 public slots:
+    void onTitleBarChanged(Container *c, const QString &name)
+    {
+        printf("[%s] %s:%d: void onTitleBarChanged(Container *c, const QString &name)\n", __func__, __FILE__, __LINE__);
+        setTabText(indexOf(c), name);
+    }
     void onShortcut(int id)
     {
         handleAction(mShortcutIds.value(id, NoAction));
@@ -197,6 +298,8 @@ public slots:
     {
         QProcess *p = new QProcess;
         Container *t = new Container(p, this);
+        connect(t, SIGNAL(titleBarChanged(Container*, QString)),
+                this, SLOT(onTitleBarChanged(Container*, QString)));
         addTab(t, QString::number(count()));
         setCurrentWidget(t);
         p->start("xterm", QStringList() << "-into" << QString::number(t->internalWinId()));
@@ -206,12 +309,24 @@ private:
     QHash<int, Action> mShortcutIds;
 };
 
+TabWidget *tabWidget = 0;
+bool x11EventFilter(void *message, long *)
+{
+    XEvent *event = reinterpret_cast<XEvent *>(message);
+    if (event->type == PropertyNotify) {
+        tabWidget->onPropertyNotify(event->xany.window);
+    }
+    return false;
+}
+
 #include "main.moc"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     TabWidget window;
+    tabWidget = &window;
+    app.setEventFilter(x11EventFilter);
     window.show();
     return app.exec();
 }
