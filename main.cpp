@@ -53,7 +53,7 @@ private:
     QProcess *mProcess;
 };
 
-class MainWindow : public QTabWidget
+class TabWidget : public QTabWidget
 {
     Q_OBJECT;
 public:
@@ -73,7 +73,7 @@ public:
         Select9,
         Select10
     };
-    MainWindow()
+    TabWidget()
     {
         connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
         handleAction(NewTab);
@@ -211,7 +211,7 @@ private:
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    MainWindow window;
+    TabWidget window;
     window.show();
     return app.exec();
 }
