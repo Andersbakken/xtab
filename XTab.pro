@@ -8,5 +8,5 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += GlobalShortcut.h main.moc
+HEADERS += GlobalShortcut.h 
 SOURCES += GlobalShortcut.cpp main.cpp
