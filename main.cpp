@@ -109,6 +109,7 @@ public:
         connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
         handleAction(NewTab);
         setFocusPolicy(Qt::NoFocus);
+        setElideMode(Qt::ElideRight);
     }
     bool event(QEvent *e)
     {
