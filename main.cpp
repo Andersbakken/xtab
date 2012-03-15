@@ -19,6 +19,9 @@ bool x11EventFilter(void *message, long *)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setOrganizationName("XTab");
+    app.setApplicationName("XTab");
+    app.setOrganizationDomain("https://github.com/Andersbakken/xtab");
     TabWidget window;
     app.setEventFilter(x11EventFilter);
     window.show();

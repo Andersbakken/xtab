@@ -82,6 +82,9 @@ void TabWidget::showEvent(QShowEvent *e)
 {
     QTabWidget::showEvent(e);
     QTimer::singleShot(0, currentWidget(), SLOT(setFocus()));
+    const QByteArray g = QSettings().value("geometry").toByteArray();
+    if (!g.isEmpty())
+        restoreGeometry(g);
 }
 
 void TabWidget::handleAction(Action action)
@@ -204,4 +207,13 @@ void TabWidget::newTab()
     addTab(t, QString::number(count()));
     setCurrentWidget(t);
     p->start("xterm", QStringList() << "-into" << QString::number(t->internalWinId()));
+}
+
+void TabWidget::resizeEvent(QResizeEvent *e)
+{
+    if (isVisible()) {
+        const QByteArray g = saveGeometry();
+        QSettings().setValue("geometry", g);
+    }
+    QTabWidget::resizeEvent(e);
 }
