@@ -6,67 +6,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-template<typename T>
-static inline bool readProperty(Display* dpy, Window w, Atom property, QVector<T>& data)
-{
-    data.clear();
-
-    Atom retatom;
-    int retfmt;
-    unsigned long retnitems, retbytes;
-    unsigned char* retprop;
-
-    unsigned long offset = 0;
-    int r;
-    do {
-        r = XGetWindowProperty(dpy, w, property, offset, 200, False, AnyPropertyType,
-                               &retatom, &retfmt, &retnitems, &retbytes, &retprop);
-        if (r != Success || retatom == None)
-            return false;
-
-        Q_ASSERT(retfmt == (sizeof(T) * 8));
-
-        data.reserve(retnitems);
-        const T* retdata = reinterpret_cast<T*>(retprop);
-        for (unsigned long i = 0; i < retnitems; ++i)
-            data << retdata[i];
-        XFree(retprop);
-
-        switch(retfmt) {
-        case 8:
-            offset += retnitems * 4;
-            break;
-        case 16:
-            offset += retnitems * 2;
-            break;
-        case 32:
-            offset += retnitems;
-            break;
-        default:
-            qFatal("Invalid format returned in readProperty: %d", retfmt);
-        }
-    } while (retbytes > 0);
-
-    return true;
-}
-
-static inline QByteArray windowName(Display* dpy, Window w)
-{
-    QByteArray res;
-
-    XClassHint hint;
-    if (XGetClassHint(dpy, w, &hint) != 0) {
-        if (hint.res_name) {
-            res = QByteArray(hint.res_name, strnlen(hint.res_name, 100)).toLower();
-            XFree(hint.res_name);
-        }
-        if (hint.res_class)
-            XFree(hint.res_class);
-    }
-
-    return res;
-}
-
 class Container : public QX11EmbedContainer
 {
     Q_OBJECT;
@@ -101,10 +40,11 @@ public:
     bool updateTitleBar(Window window)
     {
         if (window == clientWinId()) {
-            QVector<char> name;
-            static Atom wmname = XInternAtom(x11Info().display(), "WM_NAME", True);
-            if (readProperty(x11Info().display(), window, wmname, name)) {
-                emit titleBarChanged(this, QString::fromLocal8Bit(QByteArray::fromRawData(name.constData(), name.size())));
+            char* name;
+            int status = XFetchName(x11Info().display(), window, &name);
+            if (status && name) {
+                emit titleBarChanged(this, QString::fromLocal8Bit(name));
+                XFree(name);
             }
             return true;
         }
