@@ -66,6 +66,7 @@ public:
     {
         connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
         handleAction(NewTab);
+        setFocusPolicy(Qt::NoFocus);
     }
     bool event(QEvent *e)
     {
