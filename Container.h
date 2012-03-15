@@ -15,6 +15,7 @@ public:
     void onFocusIn();
     bool updateTitleBar(Window window);
     void setExplicitName(const QString &name);
+    void stopFocusTimer();
 
     virtual void focusInEvent(QFocusEvent *e);
     virtual void focusOutEvent(QFocusEvent *e);

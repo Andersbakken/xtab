@@ -37,9 +37,13 @@ bool TabWidget::event(QEvent *e)
         currentWidget()->setFocus();
         setShortcutsEnabled(true);
         break;
-    case QEvent::WindowDeactivate:
+    case QEvent::WindowDeactivate: {
         setShortcutsEnabled(false);
-        break;
+        const int c = count();
+        for (int i=0; i<c; ++i) {
+            container(i)->stopFocusTimer();
+        }
+        break; }
     default:
         break;
     }

@@ -97,3 +97,7 @@ void Container::timerEvent(QTimerEvent *e)
     }
 }
 
+void Container::stopFocusTimer()
+{
+    timer.stop();
+}
