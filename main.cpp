@@ -7,7 +7,7 @@
 #include <X11/Xutil.h>
 
 template<typename T>
-static inline bool readProperty(Display* dpy, Window w, Atom property, QList<T>& data)
+static inline bool readProperty(Display* dpy, Window w, Atom property, QVector<T>& data)
 {
     data.clear();
 
@@ -26,6 +26,7 @@ static inline bool readProperty(Display* dpy, Window w, Atom property, QList<T>&
 
         Q_ASSERT(retfmt == (sizeof(T) * 8));
 
+        data.reserve(retnitems);
         const T* retdata = reinterpret_cast<T*>(retprop);
         for (unsigned long i = 0; i < retnitems; ++i)
             data << retdata[i];
@@ -100,8 +101,11 @@ public:
     bool updateTitleBar(Window window)
     {
         if (window == clientWinId()) {
-            const QString name = QString::fromLocal8Bit(windowName(x11Info().display(), window));
-            emit titleBarChanged(this, name);
+            QVector<char> name;
+            static Atom wmname = XInternAtom(x11Info().display(), "WM_NAME", True);
+            if (readProperty(x11Info().display(), window, wmname, name)) {
+                emit titleBarChanged(this, QString::fromLocal8Bit(QByteArray::fromRawData(name.constData(), name.size())));
+            }
             return true;
         }
         return false;
@@ -286,7 +290,6 @@ public:
 public slots:
     void onTitleBarChanged(Container *c, const QString &name)
     {
-        printf("[%s] %s:%d: void onTitleBarChanged(Container *c, const QString &name)\n", __func__, __FILE__, __LINE__);
         setTabText(indexOf(c), name);
     }
     void onShortcut(int id)
@@ -312,8 +315,10 @@ private:
 TabWidget *tabWidget = 0;
 bool x11EventFilter(void *message, long *)
 {
+    static Atom wmname = XInternAtom(QX11Info().display(), "WM_NAME", True);
     XEvent *event = reinterpret_cast<XEvent *>(message);
-    if (event->type == PropertyNotify) {
+    if (event->type == PropertyNotify
+        && event->xproperty.atom == wmname) {
         tabWidget->onPropertyNotify(event->xany.window);
     }
     return false;
