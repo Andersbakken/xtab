@@ -8,5 +8,7 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += GlobalShortcut.h 
-SOURCES += GlobalShortcut.cpp main.cpp
+HEADERS += GlobalShortcut.h Container.h TabWidget.h
+SOURCES += GlobalShortcut.cpp main.cpp Container.cpp TabWidget.cpp
+OBJECTS_DIR = .obj
+MOC_DIR = .moc
