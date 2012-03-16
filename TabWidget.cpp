@@ -33,8 +33,10 @@ bool TabWidget::event(QEvent *e)
 {
     switch (e->type()) {
     case QEvent::WindowActivate:
-        QTimer::singleShot(0, currentWidget(), SLOT(setFocus()));
-        currentWidget()->setFocus();
+        if (currentWidget()) {
+            QTimer::singleShot(0, currentWidget(), SLOT(setFocus()));
+            currentWidget()->setFocus();
+        }
         setShortcutsEnabled(true);
         break;
     case QEvent::WindowDeactivate: {
@@ -208,9 +210,19 @@ void TabWidget::newTab()
     Container *t = new Container(p, this);
     connect(t, SIGNAL(titleBarChanged(Container*, QString)),
             this, SLOT(onTitleBarChanged(Container*, QString)));
+    connect(t, SIGNAL(destroyed()),
+            this, SLOT(onContainerDestroyed()), Qt::QueuedConnection);
     addTab(t, QString::number(count()));
     setCurrentWidget(t);
     p->start("xterm", QStringList() << "-into" << QString::number(t->internalWinId()));
+}
+
+void TabWidget::onContainerDestroyed()
+{
+    QApplication::flush();
+    QApplication::syncX();
+    qApp->processEvents();
+    QApplication::setActiveWindow(this);
 }
 
 void TabWidget::resizeEvent(QResizeEvent *e)

@@ -86,7 +86,7 @@ void Container::onClientEmbedded()
 
 void Container::setXFocus()
 {
-    XSetInputFocus(x11Info().display(), clientWinId(), RevertToParent, CurrentTime);
+    XSetInputFocus(x11Info().display(), clientWinId(), RevertToNone, CurrentTime);
 }
 
 void Container::timerEvent(QTimerEvent *e)
