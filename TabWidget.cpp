@@ -221,7 +221,7 @@ void TabWidget::onContainerDestroyed()
 {
     QApplication::flush();
     QApplication::syncX();
-    qApp->processEvents();
+    QApplication::processEvents();
     QApplication::setActiveWindow(this);
 }
 
