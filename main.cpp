@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("XTab");
     app.setApplicationName("XTab");
     app.setOrganizationDomain("https://github.com/Andersbakken/xtab");
+    app.setWindowIcon(QIcon(":/terminal.png"));
     TabWidget window;
     app.setEventFilter(x11EventFilter);
     window.show();
