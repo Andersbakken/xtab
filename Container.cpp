@@ -5,8 +5,9 @@
 #include <X11/Xutil.h>
 
 
-Container::Container(QProcess *proc, QWidget *parent)
-    : QX11EmbedContainer(parent), mProcess(proc), mExplicitName(false)
+Container::Container(QProcess *proc, int timerInterval, QWidget *parent)
+    : QX11EmbedContainer(parent), mProcess(proc), mExplicitName(false),
+      mTimerInterval(timerInterval)
 {
     connect(this, SIGNAL(clientClosed()), this, SLOT(deleteLater()));
     connect(this, SIGNAL(clientIsEmbedded()), this, SLOT(onClientEmbedded()));

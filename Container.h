@@ -10,7 +10,7 @@ class Container : public QX11EmbedContainer
 {
     Q_OBJECT;
 public:
-    Container(QProcess *proc, QWidget *parent = 0);
+    Container(QProcess *proc, int timerInterval, QWidget *parent = 0);
     virtual ~Container();
     void onFocusIn();
     bool updateTitleBar(Window window);
@@ -29,6 +29,7 @@ private:
     QBasicTimer timer;
     QProcess *mProcess;
     bool mExplicitName;
+    const int mTimerInterval;
 };
 
 

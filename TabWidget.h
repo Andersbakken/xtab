@@ -36,7 +36,6 @@ public:
     TabWidget();
     virtual ~TabWidget();
     static TabWidget *instance();
-    void setShortcutsEnabled(bool on);
     virtual bool event(QEvent *e);
     virtual QSize sizeHint() const;
     virtual void focusInEvent(QFocusEvent *e);
@@ -46,7 +45,10 @@ public:
     void handleAction(Action action);
     void onPropertyNotify(Window window);
     Container *container(int idx) const;
+    void enableXTab(bool on);
 public slots:
+    void enableXTab() { enableXTab(true); }
+    void disableXTab() { enableXTab(false); }
     void onCustomContextMenuRequested(const QPoint &pos);
     void onCloseRequested(int idx);
     void onTitleBarChanged(Container *c, const QString &name);
@@ -67,6 +69,7 @@ private:
 
     QList<KeyBinding> mKeyBindings;
     QHash<int, Action> mShortcutIds;
+    int mTimerInterval;
 };
 
 
