@@ -8,7 +8,15 @@
 class TabWidget : public QTabWidget
 {
     Q_OBJECT;
+    Q_ENUMS(KeyState)
+    Q_ENUMS(Action)
 public:
+    enum KeyState {
+        Shift = 0x1,
+        Control = 0x4,
+        Alt = 0x8
+    };
+
     enum Action {
         NoAction,
         NewTab,
@@ -47,6 +55,16 @@ public slots:
     void newTab();
 private:
     GlobalShortcut mShortcuts;
+    struct KeyBinding {
+        KeyBinding(unsigned k = 0, unsigned s = 0, Action a = NoAction)
+            : keyCode(k), state(s), action(a)
+        {}
+        unsigned keyCode, state;
+        Action action;
+    };
+    KeyBinding decodeKeyBinding(const QString &key, const QString &value) const;
+
+    QList<KeyBinding> mKeyBindings;
     QHash<int, Action> mShortcutIds;
 };
 

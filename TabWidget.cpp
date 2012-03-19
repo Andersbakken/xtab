@@ -18,6 +18,25 @@ TabWidget::TabWidget()
     setDocumentMode(true);
     setTabsClosable(true);
     setMovable(true);
+    QSettings settings;
+    const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
+    settings.beginGroup("KeyBindings");
+    foreach(const QString &key, settings.childKeys()) {
+        KeyBinding kb = decodeKeyBinding(key, settings.value(key).toString());
+        if (kb.action) {
+            mKeyBindings.append(kb);
+        }
+    }
+    if (mKeyBindings.isEmpty() || includeDefaults) {
+        mKeyBindings.append(decodeKeyBinding("Control|Shift+57", "NewTab"));
+        mKeyBindings.append(decodeKeyBinding("Control|Shift+28", "NewTab"));
+        for (int i=0; i<10; ++i) {
+            mKeyBindings.append(decodeKeyBinding("Alt+" + QString::number(10 + i),
+                                                 "Select" + QString::number(i + 1)));
+        }
+        mKeyBindings.append(decodeKeyBinding("Alt+113", "SelectLeft"));
+        mKeyBindings.append(decodeKeyBinding("Alt+114", "SelectRight"));
+    }
 }
 
 TabWidget::~TabWidget()
@@ -57,13 +76,8 @@ void TabWidget::setShortcutsEnabled(bool on)
     if (on == !mShortcutIds.isEmpty())
         return;
     if (on) {
-        mShortcutIds[mShortcuts.registerShortcut(57, 0x5)] = NewTab;
-        mShortcutIds[mShortcuts.registerShortcut(28, 0x5)] = NewTab;
-        for (int i=0; i<10; ++i) {
-            mShortcutIds[mShortcuts.registerShortcut(10 + i, 0x8)] = static_cast<Action>(Select1 + i);
-        }
-        mShortcutIds[mShortcuts.registerShortcut(113, 0x8)] = SelectLeft;
-        mShortcutIds[mShortcuts.registerShortcut(114, 0x8)] = SelectRight;
+        foreach(const KeyBinding &kb, mKeyBindings)
+            mShortcutIds[mShortcuts.registerShortcut(kb.keyCode, kb.state)] = kb.action;
     } else {
         for (QHash<int, Action>::const_iterator it = mShortcutIds.begin(); it != mShortcutIds.end(); ++it) {
             mShortcuts.unregisterShortcut(it.key());
@@ -232,4 +246,37 @@ void TabWidget::resizeEvent(QResizeEvent *e)
         QSettings().setValue("geometry", g);
     }
     QTabWidget::resizeEvent(e);
+}
+TabWidget::KeyBinding TabWidget::decodeKeyBinding(const QString &key, const QString &value) const
+{
+    static QRegExp rx("^([A-Za-z|]*\\+)([0-9]+)$");
+    if (!rx.exactMatch(key)) {
+        qWarning("Can't decode key %s", qPrintable(key));
+        return KeyBinding();
+    }
+    KeyBinding kb;
+    QString modifiers = rx.cap(1);
+    if (!modifiers.isEmpty()) {
+        modifiers.chop(1);
+        QMetaEnum enumerator = metaObject()->enumerator(metaObject()->indexOfEnumerator("KeyState"));
+        foreach(const QString &mod, modifiers.split('|', QString::SkipEmptyParts)) {
+            const int s = enumerator.keyToValue(qPrintable(mod));
+            if (s == -1) {
+                qWarning("Can't decode key state %s", qPrintable(mod));
+                return KeyBinding();
+            }
+            kb.state |= s;
+        }
+    }
+    bool ok;
+    kb.keyCode = rx.cap(2).toInt(&ok);
+    Q_ASSERT(ok);
+    QMetaEnum actionEnumerator = metaObject()->enumerator(metaObject()->indexOfEnumerator("Action"));
+    const int action = actionEnumerator.keyToValue(qPrintable(value));
+    if (action == -1) {
+        qWarning("Can't decode action %s", qPrintable(value));
+        return KeyBinding();
+    }
+    kb.action = static_cast<Action>(action);
+    return kb;
 }
