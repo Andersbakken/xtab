@@ -2,6 +2,7 @@
 
 static TabWidget *inst = 0;
 TabWidget::TabWidget()
+    : QTabWidget()
 {
     Q_ASSERT(!inst);
     inst = this;
@@ -21,6 +22,8 @@ TabWidget::TabWidget()
     setMovable(true);
     QSettings settings;
     const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
+    if (settings.value("hideTabBar").toBool())
+        tabBar()->hide();
     settings.beginGroup("KeyBindings");
     foreach(const QString &key, settings.childKeys()) {
         KeyBinding kb = decodeKeyBinding(key, settings.value(key).toString());
