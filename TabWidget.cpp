@@ -1,4 +1,6 @@
+#include <QX11Info>
 #include "TabWidget.h"
+#include "Container.h"
 
 static TabWidget *inst = 0;
 TabWidget::TabWidget()
@@ -32,14 +34,15 @@ TabWidget::TabWidget()
         }
     }
     if (mKeyBindings.isEmpty() || includeDefaults) {
-        mKeyBindings.append(decodeKeyBinding("Control|Shift+57", "NewTab"));
-        mKeyBindings.append(decodeKeyBinding("Control|Shift+28", "NewTab"));
+        mKeyBindings.append(decodeKeyBinding("Control|Shift+N", "NewTab"));
+        mKeyBindings.append(decodeKeyBinding("Control|Shift+T", "NewTab"));
         for (int i=0; i<10; ++i) {
-            mKeyBindings.append(decodeKeyBinding("Alt+" + QString::number(10 + i),
-                                                 "Select" + QString::number(i + 1)));
+            mKeyBindings.append(decodeKeyBinding("Alt+" + QString::number(i),
+                                                 "Select" + QString::number(i == 0 ? 10 : i)));
         }
-        mKeyBindings.append(decodeKeyBinding("Alt+113", "SelectLeft"));
-        mKeyBindings.append(decodeKeyBinding("Alt+114", "SelectRight"));
+        mKeyBindings.append(decodeKeyBinding("Alt+Left", "SelectLeft"));
+        mKeyBindings.append(decodeKeyBinding("Alt+Right", "SelectRight"));
+
     }
     handleAction(NewTab);
 }
@@ -60,7 +63,6 @@ bool TabWidget::event(QEvent *e)
         enableXTab(true);
         break;
     case QEvent::WindowDeactivate:
-        printf("[%s] %s:%d: enableXTab(false);\n", __func__, __FILE__, __LINE__);
         enableXTab(false);
         break;
     default:
@@ -242,7 +244,7 @@ void TabWidget::resizeEvent(QResizeEvent *e)
 }
 TabWidget::KeyBinding TabWidget::decodeKeyBinding(const QString &key, const QString &value) const
 {
-    static QRegExp rx("^([A-Za-z|]*\\+)([0-9]+)$");
+    static QRegExp rx("^([A-Za-z|]*\\+)([A-Za-z0-9_-]+)$");
     if (!rx.exactMatch(key)) {
         qWarning("Can't decode key %s", qPrintable(key));
         return KeyBinding();
@@ -261,9 +263,17 @@ TabWidget::KeyBinding TabWidget::decodeKeyBinding(const QString &key, const QStr
             kb.state |= s;
         }
     }
-    bool ok;
-    kb.keyCode = rx.cap(2).toInt(&ok);
-    Q_ASSERT(ok);
+    const KeySym keySym = XStringToKeysym(qPrintable(rx.cap(2)));
+    if (keySym) {
+        kb.keyCode = XKeysymToKeycode(x11Info().display(), keySym);
+    }
+    if (!kb.keyCode)
+        kb.keyCode = rx.cap(2).toInt();
+    if (!kb.keyCode) {
+        qWarning("Can't decode key code %s", qPrintable(rx.cap(2)));
+        return KeyBinding();
+    }
+
     QMetaEnum actionEnumerator = metaObject()->enumerator(metaObject()->indexOfEnumerator("Action"));
     const int action = actionEnumerator.keyToValue(qPrintable(value));
     if (action == -1) {
@@ -281,7 +291,7 @@ void TabWidget::enableXTab(bool on)
             foreach(const KeyBinding &kb, mKeyBindings)
                 mShortcutIds[mShortcuts.registerShortcut(kb.keyCode, kb.state)] = kb.action;
         }
-        
+
         if (currentWidget()) {
             QTimer::singleShot(mTimerInterval, currentWidget(), SLOT(setFocus()));
             currentWidget()->setFocus();

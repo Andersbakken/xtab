@@ -3,8 +3,10 @@
 
 #include <QtGui>
 #include "GlobalShortcut.h"
-#include "Container.h"
+#include <X11/X.h>
+#include <X11/Xlib.h>
 
+class Container;
 class TabWidget : public QTabWidget
 {
     Q_OBJECT;
