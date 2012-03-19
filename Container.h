@@ -15,7 +15,10 @@ public:
     void onFocusIn();
     bool updateTitleBar(Window window);
     void setExplicitName(const QString &name);
+    bool hasExplicitName() const { return mExplicitName; }
     void stopFocusTimer();
+
+    QString text() const;
 
     virtual void focusInEvent(QFocusEvent *e);
     virtual void focusOutEvent(QFocusEvent *e);
@@ -30,6 +33,7 @@ private:
     QProcess *mProcess;
     bool mExplicitName;
     const int mTimerInterval;
+    QString mText;
 };
 
 

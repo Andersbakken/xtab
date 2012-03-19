@@ -49,7 +49,8 @@ bool Container::updateTitleBar(Window window)
             char* name;
             int status = XFetchName(x11Info().display(), window, &name);
             if (status && name) {
-                emit titleBarChanged(this, QString::fromLocal8Bit(name));
+                mText = QString::fromLocal8Bit(name);
+                emit titleBarChanged(this, mText);
                 XFree(name);
             }
         }
@@ -62,6 +63,7 @@ void Container::setExplicitName(const QString &name)
 {
     mExplicitName = !name.isEmpty();
     if (mExplicitName) {
+        mText = name;
         emit titleBarChanged(this, name);
     } else {
         updateTitleBar(clientWinId());
@@ -101,4 +103,9 @@ void Container::timerEvent(QTimerEvent *e)
 void Container::stopFocusTimer()
 {
     timer.stop();
+}
+
+QString Container::text() const
+{
+    return mText;
 }

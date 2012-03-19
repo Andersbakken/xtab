@@ -43,12 +43,15 @@ public:
     virtual void focusInEvent(QFocusEvent *e);
     virtual void showEvent(QShowEvent *e);
     virtual void tabRemoved(int index);
+    virtual void tabInserted(int index);
     virtual void resizeEvent(QResizeEvent *e);
     void handleAction(Action action);
     void onPropertyNotify(Window window);
     Container *container(int idx) const;
     void enableXTab(bool on);
+    void setShowIndexes(bool on);
 public slots:
+    void updateTabIndexes();
     void enableXTab() { enableXTab(true); }
     void disableXTab() { enableXTab(false); }
     void onCustomContextMenuRequested(const QPoint &pos);
@@ -72,6 +75,7 @@ private:
     QList<KeyBinding> mKeyBindings;
     QHash<int, Action> mShortcutIds;
     int mTimerInterval;
+    bool mShowIndexes;
 };
 
 

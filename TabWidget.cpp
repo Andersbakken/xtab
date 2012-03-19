@@ -15,6 +15,7 @@ TabWidget::TabWidget()
     connect(this, SIGNAL(tabCloseRequested(int)), this, SLOT(onCloseRequested(int)));
     connect(this, SIGNAL(currentChanged(int)), this, SLOT(onCurrentChanged(int)));
     connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
+    connect(tabBar(), SIGNAL(tabMoved(int, int)), this, SLOT(updateTabIndexes()));
     setFocusPolicy(Qt::NoFocus);
     setElideMode(Qt::ElideRight);
     setStyleSheet("QTabWidget::pane { margin-top: 1px solid #000000 }");
@@ -24,6 +25,7 @@ TabWidget::TabWidget()
     QSettings settings;
     const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
     mTimerInterval = settings.value("timerInterval", 50).toInt();
+    mShowIndexes = settings.value("showIndexes", false).toBool();
     if (settings.value("hideTabBar").toBool())
         tabBar()->hide();
     settings.beginGroup("KeyBindings");
@@ -176,10 +178,11 @@ void TabWidget::onCustomContextMenuRequested(const QPoint &pos)
         QAction *action = menu.exec(tabBar()->mapToGlobal(pos));
         if (action == rename) {
             bool ok;
+            Container *c = container(tab);
             const QString name = QInputDialog::getText(this, "Rename tab", "Rename tab",
-                                                       QLineEdit::Normal, tabBar()->tabText(tab), &ok);
+                                                       QLineEdit::Normal, c->text(), &ok);
             if (ok) {
-                container(tab)->setExplicitName(name);
+                c->setExplicitName(name);
             }
         } else if (action == close) {
             widget(tab)->deleteLater();
@@ -201,7 +204,11 @@ void TabWidget::onCurrentChanged(int idx)
 void TabWidget::onTitleBarChanged(Container *c, const QString &name)
 {
     const int idx = indexOf(c);
-    setTabText(idx, name);
+    if (mShowIndexes) {
+        updateTabIndexes();
+    } else {
+        setTabText(idx, name);
+    }
     if (currentIndex() == idx)
         setWindowTitle(name);
 }
@@ -308,3 +315,19 @@ void TabWidget::enableXTab(bool on)
     }
 }
 
+void TabWidget::updateTabIndexes()
+{
+    if (mShowIndexes) {
+        const int c = count();
+        for (int i=0; i<c; ++i) {
+            Container *c = container(i);
+            Q_ASSERT(c);
+            setTabText(i, QString("(%1) %2").arg(i + 1).arg(c->text()));
+        }
+    }
+}
+void TabWidget::tabInserted(int index)
+{
+    QTabWidget::tabInserted(index);
+    updateTabIndexes();
+}
