@@ -51,6 +51,7 @@ public slots:
     void onCloseRequested(int idx);
     void onTitleBarChanged(Container *c, const QString &name);
     void onShortcut(int id);
+    void onCurrentChanged(int idx);
     void onContainerDestroyed();
     void newTab();
 private:

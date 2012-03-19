@@ -10,6 +10,7 @@ TabWidget::TabWidget()
             this, SLOT(onCustomContextMenuRequested(QPoint)));
 
     connect(this, SIGNAL(tabCloseRequested(int)), this, SLOT(onCloseRequested(int)));
+    connect(this, SIGNAL(currentChanged(int)), this, SLOT(onCurrentChanged(int)));
     connect(&mShortcuts, SIGNAL(activated(int)), this, SLOT(onShortcut(int)));
     handleAction(NewTab);
     setFocusPolicy(Qt::NoFocus);
@@ -208,9 +209,17 @@ void TabWidget::onCloseRequested(int idx)
     delete widget(idx);
 }
 
+void TabWidget::onCurrentChanged(int idx)
+{
+    setWindowTitle(tabText(idx));
+}
+
 void TabWidget::onTitleBarChanged(Container *c, const QString &name)
 {
-    setTabText(indexOf(c), name);
+    const int idx = indexOf(c);
+    setTabText(idx, name);
+    if (currentIndex() == idx)
+        setWindowTitle(name);
 }
 
 void TabWidget::onShortcut(int id)
