@@ -13,3 +13,4 @@ SOURCES += GlobalShortcut.cpp main.cpp Container.cpp TabWidget.cpp
 RESOURCES += xtab.qrc
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
+RCC_DIR = .qrc
