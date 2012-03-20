@@ -108,9 +108,13 @@ void TabWidget::showEvent(QShowEvent *e)
 {
     QTabWidget::showEvent(e);
     QTimer::singleShot(mTimerInterval, currentWidget(), SLOT(setFocus()));
-    const QByteArray g = QSettings().value("geometry").toByteArray();
-    if (!g.isEmpty())
-        restoreGeometry(g);
+    static bool first = true;
+    if (first) {
+        const QByteArray g = QSettings().value("geometry").toByteArray();
+        if (!g.isEmpty())
+            restoreGeometry(g);
+        first = false;
+    }
 }
 
 void TabWidget::handleAction(Action action)
@@ -269,6 +273,16 @@ void TabWidget::resizeEvent(QResizeEvent *e)
     }
     QTabWidget::resizeEvent(e);
 }
+
+void TabWidget::moveEvent(QMoveEvent *e)
+{
+    if (isVisible()) {
+        const QByteArray g = saveGeometry();
+        QSettings().setValue("geometry", g);
+    }
+    QTabWidget::moveEvent(e);
+}
+
 TabWidget::KeyBinding TabWidget::decodeKeyBinding(const QString &key, const QString &value) const
 {
     static QRegExp rx("^([A-Za-z|]*\\+)([A-Za-z0-9_-]+)$");

@@ -45,6 +45,7 @@ public:
     virtual void tabRemoved(int index);
     virtual void tabInserted(int index);
     virtual void resizeEvent(QResizeEvent *e);
+    virtual void moveEvent(QMoveEvent *e);
     void handleAction(Action action);
     void onPropertyNotify(Window window);
     Container *container(int idx) const;
