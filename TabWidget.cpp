@@ -44,7 +44,7 @@ TabWidget::TabWidget()
     const bool tabExpanding = settings.value("tabExpanding", true).toBool();
     tabBar()->setExpanding(tabExpanding);
     const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
-    mTimerInterval = settings.value("timerInterval", 50).toInt();
+    mTimerInterval = settings.value("timerInterval", 100).toInt();
     mShowIndexes = settings.value("showIndexes", false).toBool();
     if (settings.value("hideTabBar").toBool())
         tabBar()->hide();
