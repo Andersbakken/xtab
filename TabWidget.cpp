@@ -2,12 +2,30 @@
 #include "TabWidget.h"
 #include "Container.h"
 
+class TabBar : public QTabBar
+{
+public:
+    TabBar(QWidget* parent = 0)
+        : QTabBar(parent)
+    {
+    }
+
+    QSize tabSizeHint(int idx) const
+    {
+        QSize size = QTabBar::tabSizeHint(idx);
+        if (count())
+            size.setWidth(width() / count());
+        return size;
+    }
+};
+
 static TabWidget *inst = 0;
 TabWidget::TabWidget()
     : QTabWidget()
 {
     Q_ASSERT(!inst);
     inst = this;
+    setTabBar(new TabBar(this));
     tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(tabBar(), SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(onCustomContextMenuRequested(QPoint)));
