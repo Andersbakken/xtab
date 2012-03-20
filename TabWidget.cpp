@@ -23,6 +23,8 @@ TabWidget::TabWidget()
     setTabsClosable(true);
     setMovable(true);
     QSettings settings;
+    const bool tabExpanding = settings.value("tabExpanding", true).toBool();
+    tabBar()->setExpanding(tabExpanding);
     const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
     mTimerInterval = settings.value("timerInterval", 50).toInt();
     mShowIndexes = settings.value("showIndexes", false).toBool();
