@@ -6,6 +6,8 @@
 Application::Application(int& argc, char** argv)
     : QApplication(argc, argv)
 {
+    QSettings settings;
+    m_timerInterval = settings.value("timerInterval", 100).toInt();
 }
 
 bool Application::x11EventFilter(XEvent* event)
@@ -20,7 +22,7 @@ bool Application::x11EventFilter(XEvent* event)
         break; }
     case FocusIn:
     case EnterNotify:
-        m_timer.start(50, this);
+        m_timer.start(m_timerInterval, this);
         break;
     default:
         break;

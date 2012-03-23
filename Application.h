@@ -16,6 +16,7 @@ protected:
 
 private:
     QBasicTimer m_timer;
+    int m_timerInterval;
 };
 
 #endif
