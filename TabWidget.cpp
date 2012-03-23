@@ -82,10 +82,12 @@ bool TabWidget::event(QEvent *e)
 {
     switch (e->type()) {
     case QEvent::WindowActivate:
-        enableXTab(true);
+        //qDebug() << "window activate";
+        enableShortcuts(true);
         break;
     case QEvent::WindowDeactivate:
-        enableXTab(false);
+        //qDebug() << "window deactivate";
+        enableShortcuts(false);
         break;
     default:
         break;
@@ -101,13 +103,11 @@ QSize TabWidget::sizeHint() const
 void TabWidget::focusInEvent(QFocusEvent *e)
 {
     QTabWidget::focusInEvent(e);
-    enableXTab(true);
 }
 
 void TabWidget::showEvent(QShowEvent *e)
 {
     QTabWidget::showEvent(e);
-    QTimer::singleShot(mTimerInterval, currentWidget(), SLOT(setFocus()));
     static bool first = true;
     if (first) {
         const QByteArray g = QSettings().value("geometry").toByteArray();
@@ -173,8 +173,6 @@ void TabWidget::tabRemoved(int index)
     QTabWidget::tabRemoved(index);
     if (!count()) {
         close();
-    } else {
-        currentWidget()->setFocus();
     }
 }
 
@@ -222,7 +220,6 @@ void TabWidget::onCloseRequested(int idx)
 void TabWidget::onCurrentChanged(int idx)
 {
     setWindowTitle(tabText(idx));
-    QTimer::singleShot(mTimerInterval, this, SLOT(enableXTab()));
 }
 
 void TabWidget::onTitleBarChanged(Container *c, const QString &name)
@@ -248,8 +245,6 @@ void TabWidget::newTab()
     Container *t = new Container(p, mTimerInterval, this);
     connect(t, SIGNAL(titleBarChanged(Container*, QString)),
             this, SLOT(onTitleBarChanged(Container*, QString)));
-    connect(t, SIGNAL(clientIsEmbedded()), this, SLOT(enableXTab()),
-            Qt::QueuedConnection);
     connect(t, SIGNAL(destroyed()),
             this, SLOT(onContainerDestroyed()), Qt::QueuedConnection);
     addTab(t, QString::number(count()));
@@ -325,30 +320,6 @@ TabWidget::KeyBinding TabWidget::decodeKeyBinding(const QString &key, const QStr
     return kb;
 }
 
-void TabWidget::enableXTab(bool on)
-{
-    if (on) {
-        if (mShortcutIds.isEmpty()) {
-            foreach(const KeyBinding &kb, mKeyBindings)
-                mShortcutIds[mShortcuts.registerShortcut(kb.keyCode, kb.state)] = kb.action;
-        }
-
-        if (currentWidget()) {
-            QTimer::singleShot(mTimerInterval, currentWidget(), SLOT(setFocus()));
-            currentWidget()->setFocus();
-        }
-    } else {
-        for (QHash<int, Action>::const_iterator it = mShortcutIds.begin(); it != mShortcutIds.end(); ++it) {
-            mShortcuts.unregisterShortcut(it.key());
-        }
-        mShortcutIds.clear();
-        const int c = count();
-        for (int i=0; i<c; ++i) {
-            container(i)->stopFocusTimer();
-        }
-    }
-}
-
 void TabWidget::updateTabIndexes()
 {
     if (mShowIndexes) {
@@ -360,8 +331,34 @@ void TabWidget::updateTabIndexes()
         }
     }
 }
+
 void TabWidget::tabInserted(int index)
 {
     QTabWidget::tabInserted(index);
     updateTabIndexes();
+}
+
+void TabWidget::enableShortcuts(bool enable)
+{
+    //qDebug() << "enable shortcuts" << enable << mShortcutIds.keys();
+    if (enable) {
+        for (QHash<int, Action>::const_iterator it = mShortcutIds.begin(); it != mShortcutIds.end(); ++it) {
+            mShortcuts.unregisterShortcut(it.key());
+        }
+        mShortcutIds.clear();
+        foreach(const KeyBinding &kb, mKeyBindings)
+            mShortcutIds[mShortcuts.registerShortcut(kb.keyCode, kb.state)] = kb.action;
+    } else {
+        for (QHash<int, Action>::const_iterator it = mShortcutIds.begin(); it != mShortcutIds.end(); ++it) {
+            mShortcuts.unregisterShortcut(it.key());
+        }
+        mShortcutIds.clear();
+    }
+}
+
+void TabWidget::ensureFocus()
+{
+    QApplication::setActiveWindow(this);
+    container(currentIndex())->setXFocus();
+    enableShortcuts(true);
 }

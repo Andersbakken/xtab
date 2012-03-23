@@ -49,12 +49,13 @@ public:
     void handleAction(Action action);
     void onPropertyNotify(Window window);
     Container *container(int idx) const;
-    void enableXTab(bool on);
     void setShowIndexes(bool on);
+
+    void ensureFocus();
+    void enableShortcuts(bool enable);
+
 public slots:
     void updateTabIndexes();
-    void enableXTab() { enableXTab(true); }
-    void disableXTab() { enableXTab(false); }
     void onCustomContextMenuRequested(const QPoint &pos);
     void onCloseRequested(int idx);
     void onTitleBarChanged(Container *c, const QString &name);
@@ -62,6 +63,7 @@ public slots:
     void onCurrentChanged(int idx);
     void onContainerDestroyed();
     void newTab();
+
 private:
     GlobalShortcut mShortcuts;
     struct KeyBinding {

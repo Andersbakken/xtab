@@ -8,8 +8,8 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += GlobalShortcut.h Container.h TabWidget.h
-SOURCES += GlobalShortcut.cpp main.cpp Container.cpp TabWidget.cpp
+HEADERS += GlobalShortcut.h Container.h TabWidget.h Application.h
+SOURCES += GlobalShortcut.cpp main.cpp Container.cpp TabWidget.cpp Application.cpp
 RESOURCES += xtab.qrc
 OBJECTS_DIR = .obj
 MOC_DIR = .moc

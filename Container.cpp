@@ -24,24 +24,6 @@ Container::~Container()
     delete mProcess;
 }
 
-void Container::focusInEvent(QFocusEvent *e)
-{
-    QX11EmbedContainer::focusInEvent(e);
-    onFocusIn();
-}
-
-void Container::onFocusIn()
-{
-    setXFocus();
-    timer.start(10, this);
-}
-
-void Container::focusOutEvent(QFocusEvent *e)
-{
-    QX11EmbedContainer::focusOutEvent(e);
-    timer.stop();
-}
-
 bool Container::updateTitleBar(Window window)
 {
     if (window == clientWinId()) {
@@ -83,26 +65,11 @@ void Container::onClientEmbedded()
     XSelectInput(x11Info().display(), id, attrib.your_event_mask | PropertyChangeMask);
     XUngrabServer(x11Info().display());
     updateTitleBar(id);
-    if (isVisible())
-        onFocusIn();
 }
 
 void Container::setXFocus()
 {
     XSetInputFocus(x11Info().display(), clientWinId(), RevertToNone, CurrentTime);
-}
-
-void Container::timerEvent(QTimerEvent *e)
-{
-    if (e->timerId() == timer.timerId()) {
-        setXFocus();
-        timer.stop();
-    }
-}
-
-void Container::stopFocusTimer()
-{
-    timer.stop();
 }
 
 QString Container::text() const

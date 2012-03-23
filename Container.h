@@ -12,24 +12,20 @@ class Container : public QX11EmbedContainer
 public:
     Container(QProcess *proc, int timerInterval, QWidget *parent = 0);
     virtual ~Container();
-    void onFocusIn();
     bool updateTitleBar(Window window);
     void setExplicitName(const QString &name);
     bool hasExplicitName() const { return mExplicitName; }
-    void stopFocusTimer();
 
     QString text() const;
 
-    virtual void focusInEvent(QFocusEvent *e);
-    virtual void focusOutEvent(QFocusEvent *e);
-    virtual void timerEvent(QTimerEvent *e);
 signals:
     void titleBarChanged(Container *container, const QString &name);
+
 public slots:
     void onClientEmbedded();
     void setXFocus();
+
 private:
-    QBasicTimer timer;
     QProcess *mProcess;
     bool mExplicitName;
     const int mTimerInterval;
