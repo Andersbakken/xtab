@@ -77,7 +77,6 @@ private:
 
     QList<KeyBinding> mKeyBindings;
     QHash<int, Action> mShortcutIds;
-    int mTimerInterval;
     bool mShowIndexes;
 };
 

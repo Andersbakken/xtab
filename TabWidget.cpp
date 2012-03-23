@@ -44,7 +44,6 @@ TabWidget::TabWidget()
     const bool tabExpanding = settings.value("tabExpanding", true).toBool();
     tabBar()->setExpanding(tabExpanding);
     const bool includeDefaults = settings.value("includeDefaultBindings").toBool();
-    mTimerInterval = settings.value("timerInterval", 100).toInt();
     mShowIndexes = settings.value("showIndexes", false).toBool();
     if (settings.value("hideTabBar").toBool())
         tabBar()->hide();
@@ -242,7 +241,7 @@ void TabWidget::onShortcut(int id)
 void TabWidget::newTab()
 {
     QProcess *p = new QProcess;
-    Container *t = new Container(p, mTimerInterval, this);
+    Container *t = new Container(p, this);
     connect(t, SIGNAL(titleBarChanged(Container*, QString)),
             this, SLOT(onTitleBarChanged(Container*, QString)));
     connect(t, SIGNAL(destroyed()),

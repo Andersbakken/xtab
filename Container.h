@@ -10,7 +10,7 @@ class Container : public QX11EmbedContainer
 {
     Q_OBJECT;
 public:
-    Container(QProcess *proc, int timerInterval, QWidget *parent = 0);
+    Container(QProcess *proc, QWidget *parent = 0);
     virtual ~Container();
     bool updateTitleBar(Window window);
     void setExplicitName(const QString &name);
@@ -28,7 +28,6 @@ public slots:
 private:
     QProcess *mProcess;
     bool mExplicitName;
-    const int mTimerInterval;
     QString mText;
 };
 
