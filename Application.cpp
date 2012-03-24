@@ -23,7 +23,7 @@ bool Application::x11EventFilter(XEvent* event)
         foreach(const IntPair& p, it.value()) {
             if (event->xkey.state & p.first) {
                 emit shortcutActivated(p.second);
-                break;
+                return true;
             }
         }
         break; }
