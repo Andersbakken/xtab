@@ -2,7 +2,6 @@
 #define TabWidget_h
 
 #include <QtGui>
-#include "GlobalShortcut.h"
 #include <X11/X.h>
 #include <X11/Xlib.h>
 
@@ -38,7 +37,6 @@ public:
     TabWidget();
     virtual ~TabWidget();
     static TabWidget *instance();
-    virtual bool event(QEvent *e);
     virtual QSize sizeHint() const;
     virtual void focusInEvent(QFocusEvent *e);
     virtual void showEvent(QShowEvent *e);
@@ -46,13 +44,14 @@ public:
     virtual void tabInserted(int index);
     virtual void resizeEvent(QResizeEvent *e);
     virtual void moveEvent(QMoveEvent *e);
+    virtual void timerEvent(QTimerEvent *e);
     void handleAction(Action action);
     void onPropertyNotify(Window window);
     Container *container(int idx) const;
     void setShowIndexes(bool on);
 
-    void ensureFocus();
-    void enableShortcuts(bool enable);
+    void enableFocus(bool enable);
+    WId currentTabHandle() const;
 
 public slots:
     void updateTabIndexes();
@@ -65,7 +64,9 @@ public slots:
     void newTab();
 
 private:
-    GlobalShortcut mShortcuts;
+    void enableShortcuts(bool enable);
+
+private:
     struct KeyBinding {
         KeyBinding(unsigned k = 0, unsigned s = 0, Action a = NoAction)
             : keyCode(k), state(s), action(a)
@@ -78,6 +79,8 @@ private:
     QList<KeyBinding> mKeyBindings;
     QHash<int, Action> mShortcutIds;
     bool mShowIndexes;
+    int mTimerInterval;
+    QBasicTimer mFocusTimer;
 };
 
 

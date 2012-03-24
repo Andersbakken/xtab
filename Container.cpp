@@ -64,6 +64,7 @@ void Container::onClientEmbedded()
     XSelectInput(x11Info().display(), id, attrib.your_event_mask | PropertyChangeMask);
     XUngrabServer(x11Info().display());
     updateTitleBar(id);
+    setXFocus();
 }
 
 void Container::setXFocus()

@@ -4,19 +4,26 @@
 #include <QtGui>
 #include <X11/Xlib.h>
 
+typedef QPair<int, int> IntPair;
+
 class Application : public QApplication
 {
+    Q_OBJECT
 public:
     Application(int& argc, char** argv);
+    ~Application();
 
     virtual bool x11EventFilter(XEvent* event);
 
-protected:
-    virtual void timerEvent(QTimerEvent* event);
+    int registerShortcut(int keycode, int modifier);
+    void unregisterShortcut(int id);
+    void clearShortcuts();
+
+signals:
+    void shortcutActivated(int id);
 
 private:
-    QBasicTimer m_timer;
-    int m_timerInterval;
+    QHash<int, QList<IntPair> > m_shortcuts;
 };
 
 #endif
